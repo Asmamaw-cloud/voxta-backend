@@ -1,6 +1,9 @@
+// app.module.ts
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config'; // <-- import this
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PrismaModule } from './database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ChatsModule } from './modules/chats/chats.module';
@@ -12,7 +15,21 @@ import { PollsModule } from './modules/polls/polls.module';
 import { AiModule } from './modules/ai/ai.module';
 
 @Module({
-  imports: [AuthModule, UsersModule, ChatsModule, MessagesModule, CallsModule, NotificationsModule, TasksModule, PollsModule, AiModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // <--- makes process.env available globally
+    }),
+    PrismaModule,
+    AuthModule,
+    UsersModule, 
+    ChatsModule, 
+    MessagesModule, 
+    CallsModule, 
+    NotificationsModule, 
+    TasksModule, 
+    PollsModule, 
+    AiModule
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

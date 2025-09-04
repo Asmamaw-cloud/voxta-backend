@@ -59,6 +59,8 @@ model ChatMember {
   userId    String
   role      ChatRole @default(MEMBER)
   joinedAt  DateTime @default(now())
+
+    @@unique([chatId, userId])  // <-- Add this
 }
 
 model Message {
