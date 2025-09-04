@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id            String       @id @default(uuid())
+  name          String
+  email         String       @unique
+  password      String
+  avatarUrl     String?
+  status        String       @default("offline")
+  role          Role         @default(USER)
+  chats         ChatMember[]
+  messages      Message[]
+  tasks         Task[]       @relation("UserCreatedTasks")
+  assignedTasks Task[]       @relation("UserAssignedTasks")
+  notifications Notification[]
+
+  reactions     Reaction[]   // back-relation for Reaction.user
+  callParticipants CallParticipant[] // back-relation for CallParticipant.user
+  pollVotes     PollVote[]   // back-relation for PollVote.user
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+
+model Chat {
+  id        String       @id @default(uuid())
+  name      String?
+  type      ChatType
+  members   ChatMember[]
+  messages  Message[]
+  calls     Call[]
+  polls     Poll[]       // back-relation for Poll.chat
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+
+model ChatMember {
+  id        String   @id @default(uuid())
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  role      ChatRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+}
+
+model Message {
+  id          String      @id @default(uuid())
+  chat        Chat        @relation(fields: [chatId], references: [id])
+  chatId      String
+  sender      User        @relation(fields: [senderId], references: [id])
+  senderId    String
+  content     String?
+  type        MessageType @default(TEXT)
+  attachments String[]
+  replies     Message[]   @relation("MessageReplies")
+  parent      Message?    @relation("MessageReplies", fields: [parentId], references: [id])
+  parentId    String?
+  reactions   Reaction[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  message   Message  @relation(fields: [messageId], references: [id])
+  messageId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  type      String
+  createdAt DateTime @default(now())
+}
+
+model Call {
+  id           String           @id @default(uuid())
+  chat         Chat             @relation(fields: [chatId], references: [id])
+  chatId       String
+  type         CallType
+  participants CallParticipant[]
+  startedAt    DateTime         @default(now())
+  endedAt      DateTime?
+  status       CallStatus       @default(PENDING)
+}
+
+model CallParticipant {
+  id       String   @id @default(uuid())
+  call     Call     @relation(fields: [callId], references: [id])
+  callId   String
+  user     User     @relation(fields: [userId], references: [id])
+  userId   String
+  joinedAt DateTime @default(now())
+  leftAt   DateTime?
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model Task {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  creator     User        @relation("UserCreatedTasks", fields: [creatorId], references: [id])
+  creatorId   String
+  assignedTo  User?       @relation("UserAssignedTasks", fields: [assignedToId], references: [id])
+  assignedToId String?
+  status      TaskStatus  @default(PENDING)
+  dueDate     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Poll {
+  id        String     @id @default(uuid())
+  chat      Chat       @relation(fields: [chatId], references: [id])
+  chatId    String
+  question  String
+  options   String[]
+  votes     PollVote[]
+  createdAt DateTime   @default(now())
+  endsAt    DateTime?
+}
+
+model PollVote {
+  id        String   @id @default(uuid())
+  poll      Poll     @relation(fields: [pollId], references: [id])
+  pollId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  option    String
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ChatType {
+  PRIVATE
+  GROUP
+  CHANNEL
+}
+
+enum ChatRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+  VOICE
+}
+
+enum CallType {
+  AUDIO
+  VIDEO
+}
+
+enum CallStatus {
+  PENDING
+  ONGOING
+  ENDED
+  MISSED
+}
+
+enum NotificationType {
+  MESSAGE
+  CALL
+  TASK
+  POLL
+  SYSTEM
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
