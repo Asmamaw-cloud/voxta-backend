@@ -161,6 +161,8 @@ model PollVote {
   userId    String
   option    String
   createdAt DateTime @default(now())
+
+  @@unique([pollId, userId])
 }
 
 enum Role {
