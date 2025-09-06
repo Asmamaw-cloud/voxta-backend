@@ -99,10 +99,11 @@ export class PollsService {
     if (!poll) throw new NotFoundException('Poll not found');
 
     // aggregate votes per option (nice convenience)
-    const counts = poll.options.reduce<Record<string, number>>((acc, opt) => {
-      acc[opt] = 0;
-      return acc;
-    }, {});
+    const counts = poll.options.reduce((acc: Record<string, number>, opt: string) => {
+  acc[opt] = 0;
+  return acc;
+}, {} as Record<string, number>);
+
     for (const v of poll.votes) {
       if (counts[v.option] !== undefined) counts[v.option] += 1;
     }
