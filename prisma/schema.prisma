@@ -32,8 +32,9 @@ model User {
   callParticipants CallParticipant[] // back-relation for CallParticipant.user
   pollVotes        PollVote[] // back-relation for PollVote.user
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  AiConversation AiConversation[]
 }
 
 model Chat {
@@ -112,19 +113,18 @@ model CallParticipant {
 }
 
 model Notification {
-  id         String           @id @default(uuid())
-  user       User             @relation(fields: [userId], references: [id])
-  userId     String
-  type       NotificationType
-  message    String
-  read       Boolean          @default(false)
-  link       String?          // optional link to related resource
-  deleted    Boolean          @default(false) // soft delete flag
-  createdAt  DateTime         @default(now())
+  id        String           @id @default(uuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  link      String? // optional link to related resource
+  deleted   Boolean          @default(false) // soft delete flag
+  createdAt DateTime         @default(now())
 
   @@index([userId, read]) // index to speed up queries for unread notifications
 }
-
 
 model Task {
   id           String     @id @default(uuid())
@@ -214,4 +214,28 @@ enum TaskStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
+}
+
+model AiConversation {
+  id        String      @id @default(uuid())
+  user      User        @relation(fields: [userId], references: [id])
+  userId    String
+  title     String?
+  messages  AiMessage[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model AiMessage {
+  id             String         @id @default(uuid())
+  conversation   AiConversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+  sender         AiSender
+  content        String
+  createdAt      DateTime       @default(now())
+}
+
+enum AiSender {
+  USER
+  AI
 }
