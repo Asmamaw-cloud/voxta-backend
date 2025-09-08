@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,154 +8,169 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  name          String
-  email         String         @unique
-  password      String
-  avatarUrl     String?
-  status        String         @default("offline")
-  role          Role           @default(USER)
-  chats         ChatMember[]
-  messages      Message[]
-  tasks         Task[]         @relation("UserCreatedTasks")
-  assignedTasks Task[]         @relation("UserAssignedTasks")
-  notifications Notification[]
-
-  reactions        Reaction[] // back-relation for Reaction.user
-  callParticipants CallParticipant[] // back-relation for CallParticipant.user
-  pollVotes        PollVote[] // back-relation for PollVote.user
-
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  AiConversation AiConversation[]
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  password         String
+  avatarUrl        String?
+  status           String            @default("offline")
+  role             Role              @default(USER)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  AiConversation   AiConversation[]
+  callParticipants CallParticipant[]
+  chats            ChatMember[]
+  messages         Message[]
+  notifications    Notification[]
+  pollVotes        PollVote[]
+  reactions        Reaction[]
+  assignedTasks    Task[]            @relation("UserAssignedTasks")
+  tasks            Task[]            @relation("UserCreatedTasks")
 }
 
 model Chat {
   id        String       @id @default(uuid())
   name      String?
   type      ChatType
-  members   ChatMember[]
-  messages  Message[]
-  calls     Call[]
-  polls     Poll[] // back-relation for Poll.chat
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
+  calls     Call[]
+  members   ChatMember[]
+  messages  Message[]
+  polls     Poll[]
 }
 
 model ChatMember {
   id       String   @id @default(uuid())
-  chat     Chat     @relation(fields: [chatId], references: [id])
   chatId   String
-  user     User     @relation(fields: [userId], references: [id])
   userId   String
   role     ChatRole @default(MEMBER)
   joinedAt DateTime @default(now())
+  chat     Chat     @relation(fields: [chatId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 
-  @@unique([chatId, userId]) // <-- Add this
+  @@unique([chatId, userId])
 }
 
 model Message {
   id          String      @id @default(uuid())
-  chat        Chat        @relation(fields: [chatId], references: [id])
   chatId      String
-  sender      User        @relation(fields: [senderId], references: [id])
   senderId    String
   content     String?
   type        MessageType @default(TEXT)
   attachments String[]
-  replies     Message[]   @relation("MessageReplies")
-  parent      Message?    @relation("MessageReplies", fields: [parentId], references: [id])
   parentId    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  chat        Chat        @relation(fields: [chatId], references: [id])
+  parent      Message?    @relation("MessageReplies", fields: [parentId], references: [id])
+  replies     Message[]   @relation("MessageReplies")
+  sender      User        @relation(fields: [senderId], references: [id])
   reactions   Reaction[]
-
-  tasks Task[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  tasks       Task[]
 }
 
 model Reaction {
   id        String   @id @default(uuid())
-  message   Message  @relation(fields: [messageId], references: [id])
   messageId String
-  user      User     @relation(fields: [userId], references: [id])
   userId    String
   type      String
   createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Call {
   id           String            @id @default(uuid())
-  chat         Chat              @relation(fields: [chatId], references: [id])
   chatId       String
   type         CallType
-  participants CallParticipant[]
   startedAt    DateTime          @default(now())
   endedAt      DateTime?
   status       CallStatus        @default(PENDING)
+  chat         Chat              @relation(fields: [chatId], references: [id])
+  participants CallParticipant[]
 }
 
 model CallParticipant {
   id       String    @id @default(uuid())
-  call     Call      @relation(fields: [callId], references: [id])
   callId   String
-  user     User      @relation(fields: [userId], references: [id])
   userId   String
   joinedAt DateTime  @default(now())
   leftAt   DateTime?
+  call     Call      @relation(fields: [callId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
 }
 
 model Notification {
   id        String           @id @default(uuid())
-  user      User             @relation(fields: [userId], references: [id])
   userId    String
   type      NotificationType
   message   String
   read      Boolean          @default(false)
-  link      String? // optional link to related resource
-  deleted   Boolean          @default(false) // soft delete flag
   createdAt DateTime         @default(now())
+  deleted   Boolean          @default(false)
+  link      String?
+  user      User             @relation(fields: [userId], references: [id])
 
-  @@index([userId, read]) // index to speed up queries for unread notifications
+  @@index([userId, read])
 }
 
 model Task {
   id           String     @id @default(uuid())
   title        String
   description  String?
-  creator      User       @relation("UserCreatedTasks", fields: [creatorId], references: [id])
   creatorId    String
-  assignedTo   User?      @relation("UserAssignedTasks", fields: [assignedToId], references: [id])
   assignedToId String?
-  message      Message?   @relation(fields: [messageId], references: [id])
-  messageId    String? // <-- link to a chat message
   status       TaskStatus @default(PENDING)
   dueDate      DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  messageId    String?
+  assignedTo   User?      @relation("UserAssignedTasks", fields: [assignedToId], references: [id])
+  creator      User       @relation("UserCreatedTasks", fields: [creatorId], references: [id])
+  message      Message?   @relation(fields: [messageId], references: [id])
 }
 
 model Poll {
   id        String     @id @default(uuid())
-  chat      Chat       @relation(fields: [chatId], references: [id])
   chatId    String
   question  String
   options   String[]
-  votes     PollVote[]
   createdAt DateTime   @default(now())
   endsAt    DateTime?
+  chat      Chat       @relation(fields: [chatId], references: [id])
+  votes     PollVote[]
 }
 
 model PollVote {
   id        String   @id @default(uuid())
-  poll      Poll     @relation(fields: [pollId], references: [id])
   pollId    String
-  user      User     @relation(fields: [userId], references: [id])
   userId    String
   option    String
   createdAt DateTime @default(now())
+  poll      Poll     @relation(fields: [pollId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([pollId, userId])
+}
+
+model AiConversation {
+  id        String      @id @default(uuid())
+  userId    String
+  title     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id])
+  messages  AiMessage[]
+}
+
+model AiMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  sender         AiSender
+  content        String
+  createdAt      DateTime       @default(now())
+  conversation   AiConversation @relation(fields: [conversationId], references: [id])
 }
 
 enum Role {
@@ -213,25 +222,6 @@ enum TaskStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
-}
-
-model AiConversation {
-  id        String      @id @default(uuid())
-  user      User        @relation(fields: [userId], references: [id])
-  userId    String
-  title     String?
-  messages  AiMessage[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-}
-
-model AiMessage {
-  id             String         @id @default(uuid())
-  conversation   AiConversation @relation(fields: [conversationId], references: [id])
-  conversationId String
-  sender         AiSender
-  content        String
-  createdAt      DateTime       @default(now())
 }
 
 enum AiSender {
