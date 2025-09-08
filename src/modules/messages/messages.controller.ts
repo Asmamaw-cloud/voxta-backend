@@ -7,7 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('messages')
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
-  constructor(private messagesService: MessagesService) {}
+  constructor(private messagesService: MessagesService) { }
 
   @Post()
   createMessage(@Req() req: any, @Body() dto: CreateMessageDto) {
@@ -30,7 +30,7 @@ export class MessagesController {
   }
 
   @Delete(':id/react')
-removeReaction(@Req() req: any, @Param('id') messageId: string) {
-  return this.messagesService.removeReaction(req.user.userId, messageId);
-}
+  removeReaction(@Req() req: any, @Param('id') messageId: string) {
+    return this.messagesService.removeReaction(req.user.userId, messageId);
+  }
 }

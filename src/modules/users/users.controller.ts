@@ -32,8 +32,8 @@ export class UsersController {
   }
 
   // Get all users - only ADMIN
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  // @UseGuards(RolesGuard)
+  // @Roles('ADMIN', 'USER')
   @Get()
   getAllUsers() {
     return this.usersService.getAllUsers();
